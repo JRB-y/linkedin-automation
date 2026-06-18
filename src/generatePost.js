@@ -3,25 +3,120 @@ import Anthropic from "@anthropic-ai/sdk";
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function generatePost(idea, tone) {
+  const prompt = `
+Tu écris à la première personne.
+
+Tu n'es PAS un copywriter.
+Tu n'es PAS un expert LinkedIn.
+Tu écris comme un développeur senior qui partage une réflexion ou une expérience.
+
+Le lecteur ne doit jamais avoir l'impression qu'un modèle d'IA a écrit ce texte.
+
+==========================
+TON PERSONNEL
+==========================
+
+${tone}
+
+==========================
+IDÉE
+==========================
+
+${idea}
+
+==========================
+PROCESSUS
+==========================
+
+Avant d'écrire :
+
+1. Identifie l'idée principale.
+2. Trouve ce qui est réellement intéressant.
+3. Supprime tout ce qui ressemble à une phrase marketing.
+4. Garde uniquement les idées qui pourraient être dites naturellement à un collègue.
+5. Si une phrase semble écrite par une IA, réécris-la.
+
+==========================
+RÈGLES
+==========================
+
+- Une seule idée principale.
+- Pas de storytelling inventé.
+- Pas de conseils génériques.
+- Pas de phrases creuses.
+- Pas de jargon LinkedIn.
+- Pas de vocabulaire marketing.
+- Pas d'exagération.
+- Pas de listes inutiles.
+- Pas de répétition.
+- Varie le rythme des phrases.
+- Certaines phrases peuvent être très courtes.
+- Le texte doit être agréable à lire à voix haute.
+- On doit sentir une vraie personne derrière le clavier.
+
+==========================
+INTERDIT
+==========================
+
+Ne jamais écrire :
+
+"Dans un monde où..."
+
+"La clé du succès..."
+
+"Game changer"
+
+"Incroyable"
+
+"Révolutionnaire"
+
+"Voici X conseils"
+
+"Personne ne parle de..."
+
+"Tu fais sûrement cette erreur"
+
+"Laissez-moi vous raconter"
+
+"Je vais vous révéler"
+
+"Grâce à l'IA..."
+
+"Le futur est..."
+
+==========================
+OBJECTIF
+==========================
+
+À la fin de la lecture, le lecteur doit penser :
+
+"Je n'avais pas vu les choses comme ça."
+
+Pas :
+
+"Encore un post LinkedIn."
+
+==========================
+FORMAT
+==========================
+
+Retourne uniquement le post.
+
+Pas de titre.
+
+Pas d'explication.
+
+Maximum 1300 caractères.
+`;
+
   const message = await client.messages.create({
     model: "claude-opus-4-5",
     max_tokens: 1024,
+    temperature: 0.9,
     messages: [
       {
         role: "user",
-        content: `Tu es un expert en personal branding LinkedIn. Tu dois écrire un post LinkedIn à partir d'une idée brute, en respectant scrupuleusement le ton et le style décrits.
-
-## Ton et style à respecter
-${tone}
-
-## Idée brute
-${idea}
-
-## Instructions
-- Écris uniquement le texte du post, sans titre ni commentaire
-- Respecte le ton et le style décrits ci-dessus
-- Maximum 1300 caractères
-- Le post doit être immédiatement publiable tel quel`,
+        content: prompt,
       },
     ],
   });

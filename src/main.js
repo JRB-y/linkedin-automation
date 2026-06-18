@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { generatePost } from "./generatePost.js";
+import { generateImage } from "./generateImage.js";
 import { publishPost } from "./linkedinPost.js";
 
 const IDEAS_DIR = "ideas";
@@ -40,8 +41,12 @@ async function main() {
   console.log(post);
   console.log("----------------------\n");
 
+  console.log("Generating image with Imagen...");
+  const imageBuffer = await generateImage(post);
+  console.log("Image generated.");
+
   console.log("Publishing to LinkedIn...");
-  const postId = await publishPost(post);
+  const postId = await publishPost(post, imageBuffer);
   console.log(`Published successfully. Post ID: ${postId}`);
 
   if (!fs.existsSync(POSTED_DIR)) {

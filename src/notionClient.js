@@ -29,25 +29,28 @@ export async function getNextReadyIdea() {
   };
 }
 
-async function writePostToBody(pageId, postText) {
-  await notion.blocks.children.append({
-    block_id: pageId,
-    children: [
-      {
-        type: "divider",
-        divider: {},
+async function writePostToBody(pageId, postText, imageUrl) {
+  const children = [
+    { type: "divider", divider: {} },
+    {
+      type: "paragraph",
+      paragraph: {
+        rich_text: [{ type: "text", text: { content: postText } }],
       },
-      {
-        type: "paragraph",
-        paragraph: {
-          rich_text: [{ type: "text", text: { content: postText } }],
-        },
-      },
-    ],
-  });
+    },
+  ];
+
+  if (imageUrl) {
+    children.push({
+      type: "image",
+      image: { type: "external", external: { url: imageUrl } },
+    });
+  }
+
+  await notion.blocks.children.append({ block_id: pageId, children });
 }
 
-export async function markAsPosted(pageId, postText) {
+export async function markAsPosted(pageId, postText, imageUrl) {
   await Promise.all([
     notion.pages.update({
       page_id: pageId,
@@ -56,11 +59,11 @@ export async function markAsPosted(pageId, postText) {
         "Published At": { date: { start: new Date().toISOString() } },
       },
     }),
-    writePostToBody(pageId, postText),
+    writePostToBody(pageId, postText, imageUrl),
   ]);
 }
 
-export async function markAsReview(pageId, postText) {
+export async function markAsReview(pageId, postText, imageUrl) {
   await Promise.all([
     notion.pages.update({
       page_id: pageId,
@@ -68,6 +71,6 @@ export async function markAsReview(pageId, postText) {
         Status: { select: { name: "Review" } },
       },
     }),
-    writePostToBody(pageId, postText),
+    writePostToBody(pageId, postText, imageUrl),
   ]);
 }

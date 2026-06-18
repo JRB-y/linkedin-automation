@@ -3,6 +3,7 @@ import { getNextReadyIdea, markAsPosted, markAsReview } from "./notionClient.js"
 import { generatePost } from "./generatePost.js";
 import { generateImage } from "./generateImage.js";
 import { publishPost } from "./linkedinPost.js";
+import { uploadImageToGitHub } from "./githubStorage.js";
 
 const TONE_FILE = "tone.md";
 const isDryRun = process.env.DRY_RUN === "true";
@@ -31,9 +32,13 @@ async function main() {
   console.log(post);
   console.log("----------------------\n");
 
+  console.log("Uploading image to GitHub...");
+  const imageUrl = await uploadImageToGitHub(imageBuffer, idea.title);
+  console.log(`Image stored: ${imageUrl}`);
+
   if (isDryRun) {
-    await markAsReview(idea.id, post);
-    console.log(`Notion updated: "${idea.title}" → Review (post saved, not published)`);
+    await markAsReview(idea.id, post, imageUrl);
+    console.log(`Notion updated: "${idea.title}" → Review (post + image saved, not published)`);
     return;
   }
 
@@ -41,7 +46,7 @@ async function main() {
   const postId = await publishPost(post, imageBuffer);
   console.log(`Published successfully. Post ID: ${postId}`);
 
-  await markAsPosted(idea.id, post);
+  await markAsPosted(idea.id, post, imageUrl);
   console.log(`Notion updated: "${idea.title}" → Posted`);
 }
 

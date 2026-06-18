@@ -2,7 +2,47 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-export async function generatePost(idea, tone) {
+const FORMAT_INSTRUCTIONS = {
+  Text: `
+==========================
+FORMAT
+==========================
+
+Post texte uniquement. Pas d'image associée.
+Retourne uniquement le post. Pas de titre. Pas d'explication.
+Maximum 1300 caractères.
+`,
+  "Text+Image": `
+==========================
+FORMAT
+==========================
+
+Retourne uniquement le post. Pas de titre. Pas d'explication.
+Maximum 1300 caractères.
+`,
+  Quizz: `
+==========================
+FORMAT
+==========================
+
+Structure obligatoire :
+[Question courte et engageante]
+
+A) ...
+B) ...
+C) ...
+D) ...
+
+[Une phrase qui invite à répondre en commentaire, sans donner la réponse]
+
+Retourne uniquement le post. Pas de titre. Pas d'explication.
+Maximum 1300 caractères.
+`,
+};
+
+export async function generatePost(idea, tone, postType = "Text+Image") {
+  const formatInstructions = FORMAT_INSTRUCTIONS[postType] ?? FORMAT_INSTRUCTIONS["Text+Image"];
+
   const prompt = `
 Tu écris à la première personne.
 
@@ -96,17 +136,7 @@ Pas :
 
 "Encore un post LinkedIn."
 
-==========================
-FORMAT
-==========================
-
-Retourne uniquement le post.
-
-Pas de titre.
-
-Pas d'explication.
-
-Maximum 1300 caractères.
+${formatInstructions}
 `;
 
   const message = await client.messages.create({
@@ -114,10 +144,7 @@ Maximum 1300 caractères.
     max_tokens: 1024,
     temperature: 0.9,
     messages: [
-      {
-        role: "user",
-        content: prompt,
-      },
+      { role: "user", content: prompt },
     ],
   });
 

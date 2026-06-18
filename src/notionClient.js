@@ -66,10 +66,13 @@ export async function getNextReadyIdea() {
   );
   const bodyContent = extractTextFromBlocks(ideaBlocks);
 
+  const postType = page.properties["Post Type"]?.select?.name ?? "Text+Image";
+
   return {
     id: page.id,
     title,
     content: bodyContent || title,
+    postType,
     generatedPost,
     imageUrl,
   };

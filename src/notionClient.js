@@ -22,10 +22,23 @@ export async function getNextReadyIdea() {
     .map((t) => t.plain_text)
     .join("");
 
+  // Check if a post was already generated (dry-run reviewed)
+  const blocks = await notion.blocks.children.list({ block_id: page.id });
+  const paragraphBlock = blocks.results.find(
+    (b) => b.type === "paragraph" && b.paragraph.rich_text.length > 0
+  );
+  const imageBlock = blocks.results.find(
+    (b) => b.type === "image" && b.image.type === "external"
+  );
+
   return {
     id: page.id,
     title,
     content: content || title,
+    generatedPost: paragraphBlock
+      ? paragraphBlock.paragraph.rich_text.map((t) => t.plain_text).join("")
+      : null,
+    imageUrl: imageBlock ? imageBlock.image.external.url : null,
   };
 }
 

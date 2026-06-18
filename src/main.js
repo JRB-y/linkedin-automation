@@ -20,25 +20,35 @@ async function main() {
 
   console.log(`Processing: "${idea.title}"`);
 
-  const tone = fs.readFileSync(TONE_FILE, "utf-8");
+  let post = idea.generatedPost;
+  let imageUrl = idea.imageUrl;
+  let imageBuffer;
 
-  console.log("Generating post and image...");
-  const [post, imageBuffer] = await Promise.all([
-    generatePost(idea.content, tone),
-    generateImage(idea.content),
-  ]);
+  if (post && imageUrl) {
+    // Already generated during dry-run — reuse as-is
+    console.log("Using previously generated post and image from Notion.");
+    const res = await fetch(imageUrl);
+    imageBuffer = Buffer.from(await res.arrayBuffer());
+  } else {
+    // Fresh generation
+    const tone = fs.readFileSync(TONE_FILE, "utf-8");
+    console.log("Generating post and image...");
+    [post, imageBuffer] = await Promise.all([
+      generatePost(idea.content, tone),
+      generateImage(idea.content),
+    ]);
+    console.log("Uploading image to GitHub...");
+    imageUrl = await uploadImageToGitHub(imageBuffer, idea.title);
+    console.log(`Image stored: ${imageUrl}`);
+  }
 
-  console.log("\n--- Generated post ---");
+  console.log("\n--- Post ---");
   console.log(post);
-  console.log("----------------------\n");
-
-  console.log("Uploading image to GitHub...");
-  const imageUrl = await uploadImageToGitHub(imageBuffer, idea.title);
-  console.log(`Image stored: ${imageUrl}`);
+  console.log("------------\n");
 
   if (isDryRun) {
     await markAsReview(idea.id, post, imageUrl);
-    console.log(`Notion updated: "${idea.title}" → Review (post + image saved, not published)`);
+    console.log(`Notion updated: "${idea.title}" → Review`);
     return;
   }
 

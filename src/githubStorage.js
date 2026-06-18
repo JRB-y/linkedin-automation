@@ -10,7 +10,8 @@ export async function uploadImageToGitHub(imageBuffer, ideaTitle) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .slice(0, 50);
-  const filename = `${new Date().toISOString().slice(0, 10)}-${slug}.png`;
+  const ts = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+  const filename = `${ts}-${slug}.png`;
   const path = `generated-images/${filename}`;
 
   const response = await fetch(

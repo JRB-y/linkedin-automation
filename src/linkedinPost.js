@@ -1,24 +1,10 @@
 const LINKEDIN_API_BASE = "https://api.linkedin.com";
 
-async function getPersonId(accessToken) {
-  const response = await fetch(`${LINKEDIN_API_BASE}/v2/me`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to get person ID (${response.status}): ${error}`);
-  }
-
-  const data = await response.json();
-  return data.id;
-}
-
 export async function publishPost(text) {
   const accessToken = process.env.LINKEDIN_ACCESS_TOKEN;
+  const personId = process.env.LINKEDIN_PERSON_ID;
   if (!accessToken) throw new Error("LINKEDIN_ACCESS_TOKEN is not set");
-
-  const personId = await getPersonId(accessToken);
+  if (!personId) throw new Error("LINKEDIN_PERSON_ID is not set");
 
   const body = {
     author: `urn:li:person:${personId}`,

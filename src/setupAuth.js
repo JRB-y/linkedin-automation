@@ -94,6 +94,13 @@ const server = http.createServer(async (req, res) => {
 
     const { access_token, expires_in } = tokenData;
 
+    // Fetch person ID via OpenID Connect userinfo endpoint
+    const meRes = await fetch("https://api.linkedin.com/v2/userinfo", {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+    const meData = await meRes.json();
+    const personId = meData.sub || "FETCH_FAILED: " + JSON.stringify(meData);
+
     const expiresInDays = Math.round(expires_in / 86400);
     const expiryDate = new Date(Date.now() + expires_in * 1000).toLocaleDateString("fr-FR");
 
@@ -104,9 +111,8 @@ Add these secrets to your GitHub repository:
   Settings → Secrets and variables → Actions → New repository secret
 
 ANTHROPIC_API_KEY      = (your Anthropic key)
-LINKEDIN_CLIENT_ID     = ${CLIENT_ID}
-LINKEDIN_CLIENT_SECRET = ${CLIENT_SECRET}
 LINKEDIN_ACCESS_TOKEN  = ${access_token}
+LINKEDIN_PERSON_ID     = ${personId}
 
 Note: access_token expires in ${expiresInDays} days (around ${expiryDate}).
 Run this script again before that date to get a new one.

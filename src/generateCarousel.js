@@ -20,13 +20,14 @@ const ACCENTS = [
 ];
 
 function sanitize(text) {
-  // Replace chars outside WinAnsi encoding with safe equivalents
+  if (!text) return "";
   return text
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201c\u201d]/g, '"')
     .replace(/\u2026/g, "...")
-    .replace(/\u2014/g, "-")
-    .replace(/\u2013/g, "-")
+    .replace(/[\u2014\u2013]/g, "-")
+    .replace(/[\u2192\u21d2]/g, "->")
+    .replace(/[\u2190\u21d0]/g, "<-")
     .replace(/[^\x00-\xff]/g, "");
 }
 
@@ -112,7 +113,7 @@ function drawSlide(page, slide, index, total, fontBold, fontRegular) {
 
   // Swipe hint on first slide
   if (isFirst) {
-    page.drawText("Swipe →", {
+    page.drawText("Swipe >", {
       x: W - PAD - 50,
       y: PAD - 15,
       size: 11,

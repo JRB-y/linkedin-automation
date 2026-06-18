@@ -172,7 +172,8 @@ Réponds UNIQUEMENT avec un JSON valide, sans markdown :
 
   let data;
   try {
-    data = JSON.parse(response.content[0].text.trim());
+    const raw = response.content[0].text.trim().replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "");
+    data = JSON.parse(raw);
   } catch {
     throw new Error("Claude returned invalid JSON for carousel");
   }

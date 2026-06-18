@@ -78,7 +78,7 @@ export async function getNextReadyIdea() {
   };
 }
 
-async function writePostToggle(pageId, postText, imageUrl) {
+async function writePostToggle(pageId, postText, imageUrl, pdfUrl) {
   const toggleChildren = [
     {
       type: "paragraph",
@@ -92,6 +92,21 @@ async function writePostToggle(pageId, postText, imageUrl) {
     toggleChildren.push({
       type: "image",
       image: { type: "external", external: { url: imageUrl } },
+    });
+  }
+
+  if (pdfUrl) {
+    toggleChildren.push({
+      type: "paragraph",
+      paragraph: {
+        rich_text: [
+          {
+            type: "text",
+            text: { content: "📄 Carousel PDF", link: { url: pdfUrl } },
+            annotations: { bold: true, color: "blue" },
+          },
+        ],
+      },
     });
   }
 
@@ -109,7 +124,7 @@ async function writePostToggle(pageId, postText, imageUrl) {
   });
 }
 
-export async function markAsPosted(pageId, postText, imageUrl) {
+export async function markAsPosted(pageId, postText, imageUrl, pdfUrl) {
   await Promise.all([
     notion.pages.update({
       page_id: pageId,
@@ -118,11 +133,11 @@ export async function markAsPosted(pageId, postText, imageUrl) {
         "Published At": { date: { start: new Date().toISOString() } },
       },
     }),
-    writePostToggle(pageId, postText, imageUrl),
+    writePostToggle(pageId, postText, imageUrl, pdfUrl),
   ]);
 }
 
-export async function markAsReview(pageId, postText, imageUrl) {
+export async function markAsReview(pageId, postText, imageUrl, pdfUrl) {
   await Promise.all([
     notion.pages.update({
       page_id: pageId,
@@ -130,6 +145,6 @@ export async function markAsReview(pageId, postText, imageUrl) {
         Status: { select: { name: "Review" } },
       },
     }),
-    writePostToggle(pageId, postText, imageUrl),
+    writePostToggle(pageId, postText, imageUrl, pdfUrl),
   ]);
 }

@@ -4,7 +4,7 @@ import { generatePost } from "./generatePost.js";
 import { generateImage } from "./generateImage.js";
 import { publishPost, publishCarousel } from "./linkedinPost.js";
 import { generateCarousel } from "./generateCarousel.js";
-import { uploadImageToGitHub } from "./githubStorage.js";
+import { uploadImageToGitHub, uploadPDFToGitHub } from "./githubStorage.js";
 
 const TONE_FILE = "tone.md";
 const isDryRun = process.env.DRY_RUN === "true";
@@ -31,16 +31,20 @@ async function main() {
     console.log(caption);
     console.log(`--- ${slides.length} slides generated ---\n`);
 
+    console.log("Uploading PDF to GitHub...");
+    const pdfUrl = await uploadPDFToGitHub(pdfBuffer, idea.title);
+    console.log(`PDF stored: ${pdfUrl}`);
+
     if (isDryRun) {
       const slidesSummary = slides.map((s, i) => `${i + 1}. ${s.title}`).join("\n");
-      await markAsReview(idea.id, `${caption}\n\n---\nSlides:\n${slidesSummary}`, null);
+      await markAsReview(idea.id, `${caption}\n\n---\nSlides:\n${slidesSummary}`, null, pdfUrl);
       console.log(`Notion updated: "${idea.title}" → Review (carousel)`);
       return;
     }
 
     const postId = await publishCarousel(caption, pdfBuffer, idea.title);
     console.log(`Published carousel. Post ID: ${postId}`);
-    await markAsPosted(idea.id, caption, null);
+    await markAsPosted(idea.id, caption, null, pdfUrl);
     console.log(`Notion updated: "${idea.title}" → Posted`);
     return;
   }

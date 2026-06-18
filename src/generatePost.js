@@ -110,7 +110,7 @@ Maximum 1300 caractères.
 `;
 
   const message = await client.messages.create({
-    model: "claude-opus-4-5",
+    model: "claude-sonnet-4-5",
     max_tokens: 1024,
     temperature: 0.9,
     messages: [

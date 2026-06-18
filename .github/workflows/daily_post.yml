@@ -3,7 +3,12 @@ name: Daily LinkedIn Post
 on:
   schedule:
     - cron: "0 9 * * *" # 9:00 UTC every day
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (generate only, do not publish to LinkedIn)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -34,4 +39,5 @@ jobs:
           LINKEDIN_PERSON_ID: ${{ secrets.LINKEDIN_PERSON_ID }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: node src/main.js

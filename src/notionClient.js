@@ -29,12 +29,23 @@ export async function getNextReadyIdea() {
   };
 }
 
-export async function markAsPosted(pageId) {
+export async function markAsPosted(pageId, postText) {
   await notion.pages.update({
     page_id: pageId,
     properties: {
       Status: { select: { name: "Posted" } },
       "Published At": { date: { start: new Date().toISOString() } },
+      Post: { rich_text: [{ text: { content: postText } }] },
+    },
+  });
+}
+
+export async function markAsReview(pageId, postText) {
+  await notion.pages.update({
+    page_id: pageId,
+    properties: {
+      Status: { select: { name: "Review" } },
+      Post: { rich_text: [{ text: { content: postText } }] },
     },
   });
 }

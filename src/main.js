@@ -1,12 +1,15 @@
 import fs from "fs";
-import { getNextReadyIdea, markAsPosted } from "./notionClient.js";
+import { getNextReadyIdea, markAsPosted, markAsReview } from "./notionClient.js";
 import { generatePost } from "./generatePost.js";
 import { generateImage } from "./generateImage.js";
 import { publishPost } from "./linkedinPost.js";
 
 const TONE_FILE = "tone.md";
+const isDryRun = process.env.DRY_RUN === "true";
 
 async function main() {
+  if (isDryRun) console.log("--- DRY RUN MODE (no LinkedIn publish) ---\n");
+
   const idea = await getNextReadyIdea();
 
   if (!idea) {
@@ -28,11 +31,17 @@ async function main() {
   console.log(post);
   console.log("----------------------\n");
 
+  if (isDryRun) {
+    await markAsReview(idea.id, post);
+    console.log(`Notion updated: "${idea.title}" → Review (post saved, not published)`);
+    return;
+  }
+
   console.log("Publishing to LinkedIn...");
   const postId = await publishPost(post, imageBuffer);
   console.log(`Published successfully. Post ID: ${postId}`);
 
-  await markAsPosted(idea.id);
+  await markAsPosted(idea.id, post);
   console.log(`Notion updated: "${idea.title}" → Posted`);
 }
 

@@ -173,9 +173,12 @@ Réponds UNIQUEMENT avec un JSON valide, sans markdown :
   let data;
   try {
     const raw = response.content[0].text.trim().replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "");
+    console.log("--- Claude raw response ---");
+    console.log(raw);
+    console.log("---------------------------");
     data = JSON.parse(raw);
-  } catch {
-    throw new Error("Claude returned invalid JSON for carousel");
+  } catch (e) {
+    throw new Error(`Claude returned invalid JSON for carousel: ${e.message}`);
   }
 
   const pdfBuffer = await buildPDF(data.slides);

@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
-    "@google/genai": "^1.0.0"
+    "@google/genai": "^1.0.0",
+    "@notionhq/client": "^2.2.15"
   },
   "engines": {
     "node": ">=18.0.0"

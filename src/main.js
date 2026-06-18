@@ -2,7 +2,8 @@ import fs from "fs";
 import { getNextReadyIdea, markAsPosted, markAsReview } from "./notionClient.js";
 import { generatePost } from "./generatePost.js";
 import { generateImage } from "./generateImage.js";
-import { publishPost } from "./linkedinPost.js";
+import { publishPost, publishCarousel } from "./linkedinPost.js";
+import { generateCarousel } from "./generateCarousel.js";
 import { uploadImageToGitHub } from "./githubStorage.js";
 
 const TONE_FILE = "tone.md";
@@ -22,9 +23,26 @@ async function main() {
 
   const withImage = ["Text+Image", "Carousel"].includes(idea.postType);
 
+  // --- Carousel ---
   if (idea.postType === "Carousel") {
-    console.log("Carousel is not yet implemented. Change Post Type and retry.");
-    process.exit(0);
+    const { caption, pdfBuffer, slides } = await generateCarousel(idea.content, fs.readFileSync(TONE_FILE, "utf-8"));
+
+    console.log("\n--- Caption ---");
+    console.log(caption);
+    console.log(`--- ${slides.length} slides generated ---\n`);
+
+    if (isDryRun) {
+      const slidesSummary = slides.map((s, i) => `${i + 1}. ${s.title}`).join("\n");
+      await markAsReview(idea.id, `${caption}\n\n---\nSlides:\n${slidesSummary}`, null);
+      console.log(`Notion updated: "${idea.title}" → Review (carousel)`);
+      return;
+    }
+
+    const postId = await publishCarousel(caption, pdfBuffer, idea.title);
+    console.log(`Published carousel. Post ID: ${postId}`);
+    await markAsPosted(idea.id, caption, null);
+    console.log(`Notion updated: "${idea.title}" → Posted`);
+    return;
   }
 
   let post = idea.generatedPost;

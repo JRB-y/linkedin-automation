@@ -1,0 +1,17 @@
+{
+  "name": "linkedin-automation",
+  "version": "1.0.0",
+  "description": "Automated LinkedIn posting via Claude AI",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.js",
+    "setup-auth": "node src/setupAuth.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

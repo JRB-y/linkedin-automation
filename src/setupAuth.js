@@ -42,7 +42,7 @@ const authUrl =
   `?response_type=code` +
   `&client_id=${CLIENT_ID}` +
   `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-  `&scope=w_member_social` +
+  `&scope=openid%20profile%20email%20w_member_social` +
   `&state=random_state_string`;
 
 console.log("\nOpen this URL in your browser to authorize the app:\n");
@@ -92,8 +92,10 @@ const server = http.createServer(async (req, res) => {
       throw new Error(JSON.stringify(tokenData));
     }
 
-    const { access_token, refresh_token, expires_in, refresh_token_expires_in } =
-      tokenData;
+    const { access_token, expires_in } = tokenData;
+
+    const expiresInDays = Math.round(expires_in / 86400);
+    const expiryDate = new Date(Date.now() + expires_in * 1000).toLocaleDateString("fr-FR");
 
     const output = `
 Authorization successful!
@@ -101,13 +103,13 @@ Authorization successful!
 Add these secrets to your GitHub repository:
   Settings → Secrets and variables → Actions → New repository secret
 
+ANTHROPIC_API_KEY      = (your Anthropic key)
 LINKEDIN_CLIENT_ID     = ${CLIENT_ID}
 LINKEDIN_CLIENT_SECRET = ${CLIENT_SECRET}
-LINKEDIN_REFRESH_TOKEN = ${refresh_token}
+LINKEDIN_ACCESS_TOKEN  = ${access_token}
 
-Notes:
-  - access_token expires in ${Math.round(expires_in / 3600)}h (refreshed automatically at each run)
-  - refresh_token expires in ${Math.round(refresh_token_expires_in / 86400)} days — run this script again before it expires
+Note: access_token expires in ${expiresInDays} days (around ${expiryDate}).
+Run this script again before that date to get a new one.
 `;
 
     console.log(output);

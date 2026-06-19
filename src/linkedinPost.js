@@ -61,29 +61,22 @@ async function uploadImageBinary(uploadUrl, imageBuffer, accessToken) {
 }
 
 async function registerDocumentUpload(accessToken, personId) {
-  const body = {
-    registerUploadRequest: {
-      recipes: ["urn:li:digitalmediaRecipe:feedshare-document"],
-      owner: `urn:li:person:${personId}`,
-      serviceRelationships: [
-        {
-          relationshipType: "OWNER",
-          identifier: "urn:li:userGeneratedContent",
-        },
-      ],
-    },
-  };
-
+  // New LinkedIn REST API (2023+) — replaces deprecated /v2/assets for documents
   const response = await fetch(
-    `${LINKEDIN_API_BASE}/v2/assets?action=registerUpload`,
+    `${LINKEDIN_API_BASE}/rest/documents?action=initializeUpload`,
     {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
+        "LinkedIn-Version": "202306",
         "X-Restli-Protocol-Version": "2.0.0",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        initializeUploadRequest: {
+          owner: `urn:li:person:${personId}`,
+        },
+      }),
     }
   );
 
@@ -93,11 +86,10 @@ async function registerDocumentUpload(accessToken, personId) {
   }
 
   const data = await response.json();
-  const uploadUrl =
-    data.value.uploadMechanism[
-      "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
-    ].uploadUrl;
-  return { uploadUrl, asset: data.value.asset };
+  return {
+    uploadUrl: data.value.uploadUrl,
+    document: data.value.document, // urn:li:document:...
+  };
 }
 
 export async function publishCarousel(caption, pdfBuffer, title) {
@@ -107,7 +99,7 @@ export async function publishCarousel(caption, pdfBuffer, title) {
   if (!personId) throw new Error("LINKEDIN_PERSON_ID is not set");
 
   console.log("Uploading PDF to LinkedIn...");
-  const { uploadUrl, asset } = await registerDocumentUpload(accessToken, personId);
+  const { uploadUrl, document } = await registerDocumentUpload(accessToken, personId);
 
   const uploadResponse = await fetch(uploadUrl, {
     method: "PUT",
@@ -123,26 +115,32 @@ export async function publishCarousel(caption, pdfBuffer, title) {
     throw new Error(`Failed to upload PDF (${uploadResponse.status}): ${error}`);
   }
 
+  // Use newer /rest/posts API (required when using /rest/documents)
   const body = {
     author: `urn:li:person:${personId}`,
-    lifecycleState: "PUBLISHED",
-    specificContent: {
-      "com.linkedin.ugc.ShareContent": {
-        shareCommentary: { text: caption },
-        shareMediaCategory: "DOCUMENT",
-        media: [{ status: "READY", media: asset, title: { text: title } }],
+    commentary: caption,
+    visibility: "PUBLIC",
+    distribution: {
+      feedDistribution: "MAIN_FEED",
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    content: {
+      document: {
+        altText: title,
+        id: document,
       },
     },
-    visibility: {
-      "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
-    },
+    lifecycleState: "PUBLISHED",
+    isReshareDisabledByAuthor: false,
   };
 
-  const response = await fetch(`${LINKEDIN_API_BASE}/v2/ugcPosts`, {
+  const response = await fetch(`${LINKEDIN_API_BASE}/rest/posts`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
+      "LinkedIn-Version": "202306",
       "X-Restli-Protocol-Version": "2.0.0",
     },
     body: JSON.stringify(body),
@@ -153,8 +151,8 @@ export async function publishCarousel(caption, pdfBuffer, title) {
     throw new Error(`Failed to publish carousel (${response.status}): ${error}`);
   }
 
-  const data = await response.json();
-  return data.id;
+  // /rest/posts returns the post URN in the x-restli-id header (no JSON body)
+  return response.headers.get("x-restli-id") ?? "unknown";
 }
 
 export async function publishPost(text, imageBuffer) {

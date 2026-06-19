@@ -1,5 +1,21 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+async function fetchArticleText(url) {
+  const res = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; linkedin-automation)" },
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const html = await res.text();
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 4000);
+}
+
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const FORMAT_INSTRUCTIONS = {
@@ -43,6 +59,26 @@ Maximum 1300 caractères.
 export async function generatePost(idea, tone, postType = "Text+Image") {
   const formatInstructions = FORMAT_INSTRUCTIONS[postType] ?? FORMAT_INSTRUCTIONS["Text+Image"];
 
+  // If a source URL is present in the idea, fetch the article text
+  const urlMatch = idea.match(/https?:\/\/\S+/);
+  let articleSection = "";
+  if (urlMatch) {
+    try {
+      const articleText = await fetchArticleText(urlMatch[0]);
+      articleSection = `
+==========================
+ARTICLE SOURCE
+==========================
+
+${articleText}
+
+`;
+      console.log(`[generatePost] Article fetched: ${urlMatch[0]}`);
+    } catch (err) {
+      console.warn(`[generatePost] Could not fetch article (${err.message}) — continuing without it`);
+    }
+  }
+
   const prompt = `
 Tu écris à la première personne.
 
@@ -63,7 +99,7 @@ IDÉE
 ==========================
 
 ${idea}
-
+${articleSection}
 ==========================
 PROCESSUS
 ==========================

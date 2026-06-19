@@ -158,7 +158,7 @@ async function generateIdeas(articles) {
   const list = articles
     .map(
       (a, i) =>
-        `${i + 1}. [${a.source}] "${a.title}"${a.description ? `\n   ${a.description}` : ""}`
+        `${i + 1}. [${a.source}] "${a.title}"\n   URL: ${a.url}${a.description ? `\n   ${a.description}` : ""}`
     )
     .join("\n\n");
 
@@ -175,6 +175,7 @@ Pour chaque idée, produis un objet JSON :
 - "body" : description de l'angle du post en français (2-3 phrases : quel angle personnel ou réflexion ce post va explorer, sans résumer l'article)
 - "postType" : "Text", "Text+Image", "Quizz", ou "Carousel"
 - "sourceTitle" : titre exact de l'article source (ou plusieurs titres séparés par " + " si l'idée en combine plusieurs)
+- "sourceUrl" : URL exacte de l'article source telle que fournie dans la liste ci-dessus (une seule URL, la plus pertinente)
 
 Consignes :
 - Trouver un angle personnel, une réflexion, une expérience vécue inspirée par l'article — pas un résumé
@@ -235,6 +236,25 @@ async function createDraft(idea) {
           ],
         },
       },
+      ...(idea.sourceUrl
+        ? [
+            {
+              type: "paragraph",
+              paragraph: {
+                rich_text: [
+                  {
+                    type: "text",
+                    text: {
+                      content: idea.sourceUrl,
+                      link: { url: idea.sourceUrl },
+                    },
+                    annotations: { color: "blue" },
+                  },
+                ],
+              },
+            },
+          ]
+        : []),
     ],
   });
 }
